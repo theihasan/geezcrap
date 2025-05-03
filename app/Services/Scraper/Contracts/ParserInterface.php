@@ -4,5 +4,5 @@ namespace App\Services\Scraper\Contracts;
 
 interface ParserInterface
 {
-
+    public function parse(string $html): array;
 }

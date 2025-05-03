@@ -2,7 +2,11 @@
 
 namespace App\Services\Scraper\Strategies;
 
-final class SimplyHired
-{
+use App\Services\Scraper\Parsers\DOMParser;
 
+class SimplyHired
+{
+    public function __construct(DomParser $parser)
+    {
+    }
 }

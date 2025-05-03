@@ -2,7 +2,17 @@
 
 namespace App\Services\Scraper\Factory;
 
-final class ScraperFactory
-{
+use App\Services\Scraper\Contracts\ScraperInterface;
+use App\Services\Scraper\Parsers\DOMParser;
+use App\Services\Scraper\Strategies\SimplyHired;
 
+class ScraperFactory
+{
+    public function create(string $source)
+    {
+        return match ($source) {
+            'simply-hired' => new SimplyHired(new DOMParser()),
+            default => throw new \InvalidArgumentException('Invalid source'),
+        };
+    }
 }

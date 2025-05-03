@@ -14,8 +14,13 @@ class DOMParser implements ParserInterface
             'html_length' => strlen($html)
         ]);
 
+        if (app()->environment('local')) {
+            Log::debug('Raw HTML content', ['html' => $html]);
+        }
+
         $crawler = new Crawler($html);
-        $jobElements = $crawler->filter('.job-listing');
+
+        $jobElements = $crawler->filter('.chakra-button[data-mdref]');
 
         Log::info('Found job listings', [
             'count' => $jobElements->count()
@@ -23,11 +28,22 @@ class DOMParser implements ParserInterface
 
         $results = $jobElements->each(function (Crawler $node, $i) {
             try {
+                $title = $node->text();
+                $href = $node->attr('data-mdref');
+
+                if (empty($title) || empty($href)) {
+                    Log::warning('Missing required data', [
+                        'index' => $i,
+                        'has_title' => !empty($title),
+                        'has_href' => !empty($href)
+                    ]);
+                    return null;
+                }
+
                 $job = [
-                    'title' => $node->filter('.job-title')->text(''),
-                    'company' => $node->filter('.company-name')->text(''),
-                    'location' => $node->filter('.location')->text(''),
-                    'description' => $node->filter('.job-description')->text(''),
+                    'title' => $title,
+                    'url' => 'https://www.simplyhired.com' . $href,
+                    'source_id' => str_replace('/job/', '', $href)
                 ];
 
                 Log::debug('Parsed job listing', [
@@ -36,6 +52,7 @@ class DOMParser implements ParserInterface
                 ]);
 
                 return $job;
+
             } catch (\Exception $e) {
                 Log::error('Error parsing job element', [
                     'index' => $i,
@@ -50,6 +67,14 @@ class DOMParser implements ParserInterface
         Log::info('Parsing completed', [
             'successful_parses' => count($results)
         ]);
+
+        if (empty($results)) {
+            Log::warning('No jobs were successfully parsed', [
+                'selectors_used' => [
+                    'job_container' => '.chakra-button[data-mdref]'
+                ]
+            ]);
+        }
 
         return $results;
     }

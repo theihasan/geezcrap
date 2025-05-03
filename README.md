@@ -34,7 +34,7 @@ This project serves as the data collection backbone for Geezap, automating the p
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-username/geezcrap.git
+git clone https://github.com/theihasan/geezcrap.git
 ```
 2. Install PHP dependencies:
 ```bash

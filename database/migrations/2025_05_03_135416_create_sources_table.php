@@ -9,6 +9,9 @@ return new class extends Migration {
     {
         Schema::create('sources', function (Blueprint $table) {
             $table->id();
+            $table->string('title', 500);
+            $table->string('url', 255);
+            $table->string('source', 50);
             $table->timestamps();
             $table->softDeletes();
         });

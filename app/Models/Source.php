@@ -8,4 +8,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Source extends Model
 {
     use SoftDeletes;
+    protected $table = 'sources';
+
+    protected $fillable = [
+        'title', 'url', 'source'
+    ];
 }

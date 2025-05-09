@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 abstract class AbstractScraper implements ScraperInterface
 {
     protected Browsershot $browser;
+    protected int $maxPages = 3; // Default to scrape 3 pages
 
     public function __construct(protected ParserInterface $parser)
     {
@@ -69,10 +70,6 @@ abstract class AbstractScraper implements ScraperInterface
             $html = $browsershot->bodyHtml();
 
             if (app()->environment('local')) {
-                Log::debug('Page content retrieved', [
-                    'content_length' => strlen($html),
-                    'url' => $url
-                ]);
 
                 $timestamp = now()->format('Y-m-d_H-i-s');
                 $filename = 'page_content_' . $timestamp;
@@ -99,6 +96,71 @@ abstract class AbstractScraper implements ScraperInterface
                 previous: $e
             );
         }
+    }
+
+    /**
+     * Scrape multiple pages with pagination
+     *
+     * @param string $baseUrl The initial URL to scrape
+     * @param int|null $maxPages Maximum number of pages to scrape
+     * @return array Combined results from all pages
+     */
+    protected function scrapeWithPagination(string $baseUrl, int $maxPages = null): array
+    {
+        $maxPages = $maxPages ?? $this->maxPages;
+        $allResults = [];
+        $currentUrl = $baseUrl;
+        $currentPage = 1;
+
+        Log::info("Starting pagination scraping", [
+            'base_url' => $baseUrl,
+            'max_pages' => $maxPages
+        ]);
+
+        while ($currentPage <= $maxPages) {
+            Log::info("Scraping page {$currentPage} of {$maxPages}", ['url' => $currentUrl]);
+
+            // Get the HTML content of the current page
+            $html = $this->getHtml($currentUrl);
+
+            // Parse the current page and add to results
+            $pageResults = $this->parser->parse($html);
+            $allResults = array_merge($allResults, $pageResults);
+
+            Log::info("Page {$currentPage} results", ['count' => count($pageResults)]);
+
+            // Stop if we've reached the max pages
+            if ($currentPage >= $maxPages) {
+                break;
+            }
+
+            // Find the next page URL
+            $nextPageUrl = $this->extractNextPageUrl($html);
+
+            // If no next page URL found, break the loop
+            if (empty($nextPageUrl)) {
+                Log::info("No next page URL found, stopping pagination", ['current_page' => $currentPage]);
+                break;
+            }
+
+            $currentUrl = $nextPageUrl;
+            $currentPage++;
+        }
+
+        Log::info("Pagination scraping completed", ['total_results' => count($allResults)]);
+        return $allResults;
+    }
+
+    /**
+     * Extract the next page URL from the HTML content
+     * To be implemented by child classes
+     *
+     * @param string $html The HTML content
+     * @return string|null The next page URL or null if not found
+     */
+    protected function extractNextPageUrl(string $html): ?string
+    {
+        return null;
     }
 
     abstract public function scrape(string $url): array;

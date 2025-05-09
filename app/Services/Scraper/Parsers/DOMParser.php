@@ -14,10 +14,6 @@ class DOMParser implements ParserInterface
             'html_length' => strlen($html)
         ]);
 
-        if (app()->environment('local')) {
-            Log::debug('Raw HTML content', ['html' => $html]);
-        }
-
         $crawler = new Crawler($html);
 
         $jobElements = $crawler->filter('.chakra-button[data-mdref]');

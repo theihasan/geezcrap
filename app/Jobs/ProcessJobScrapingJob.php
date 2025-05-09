@@ -19,7 +19,7 @@ class ProcessJobScrapingJob implements ShouldQueue
 
     public int $tries = 2;
     public array $backoff = [60, 120];
-    public int $timeout = 300;
+    public int $timeout = 600;
     public int $maxExceptions = 1;
 
     public function __construct(

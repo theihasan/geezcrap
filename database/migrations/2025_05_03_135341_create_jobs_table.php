@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('jobs', function (Blueprint $table) {
+        Schema::create('jobs_details', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
             $table->softDeletes();

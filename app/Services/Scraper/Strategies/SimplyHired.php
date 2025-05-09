@@ -2,9 +2,12 @@
 
 namespace App\Services\Scraper\Strategies;
 
+use App\DTO\JobSourceDTO;
+use App\Jobs\SaveSourcesJob;
 use App\Services\Scraper\AbstractScraper;
 use App\Services\Scraper\Contracts\ParserInterface;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\DomCrawler\Crawler;
 
 class SimplyHired extends AbstractScraper
 {
@@ -23,14 +26,10 @@ class SimplyHired extends AbstractScraper
         }
 
         try {
-            $html = $this->getHtml($url);
+            // Use pagination to scrape multiple pages
+            $results = $this->scrapeWithPagination($url);
 
-            Log::info('HTML content retrieved', [
-                'content_length' => strlen($html)
-            ]);
-
-            $results = $this->parser->parse($html);
-            Log::info('Parsing completed', [
+            Log::info('Scraping completed', [
                 'results_count' => count($results)
             ]);
 
@@ -42,6 +41,35 @@ class SimplyHired extends AbstractScraper
             ]);
             throw $e;
         }
+    }
+
+    /**
+     * Extract the next page URL from SimplyHired pagination
+     */
+    protected function extractNextPageUrl(string $html): ?string
+    {
+        try {
+            $crawler = new Crawler($html);
+            $nextPageLink = $crawler->filter('a[data-testid="pageNumberBlockNext"]');
+
+            if ($nextPageLink->count() > 0) {
+                $href = $nextPageLink->attr('href');
+
+                // If the href is a relative URL, convert it to absolute
+                if (strpos($href, 'http') !== 0) {
+                    $href = 'https://www.simplyhired.com' . $href;
+                }
+
+                Log::info('Found next page URL', ['url' => $href]);
+                return $href;
+            }
+        } catch (\Exception $e) {
+            Log::warning('Error extracting next page URL', [
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return null;
     }
 
     public function validate(mixed $data): bool
@@ -82,11 +110,14 @@ class SimplyHired extends AbstractScraper
         $result = [
             'title' => $data['title'],
             'source' => 'simply-hired',
-            'source_url' => $data['url'],
-            'source_id' => $data['source_id'] ?? null,
-            'scraped_at' => now(),
+            'source_url' => $data['url']
         ];
 
+        SaveSourcesJob::dispatchSync(new JobSourceDTO(
+            $result['title'],
+            $result['source_url'],
+            $result['source']
+        ));
         Log::debug('Transformed job', [
             'title' => $result['title'],
             'source_url' => $result['source_url']

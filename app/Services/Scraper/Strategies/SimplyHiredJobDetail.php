@@ -25,17 +25,13 @@ class SimplyHiredJobDetail extends AbstractScraper
         }
 
         try {
-            // Get the HTML content
             $html = $this->getHtml($url);
 
-            // Parse the job details
             $jobDetails = $this->parser->parse($html);
 
-            // Add the source URL to the job details
             $jobDetails['source_url'] = $url;
             $jobDetails['source'] = 'simply-hired';
 
-            // Transform the data
             $transformedData = $this->transform($jobDetails);
 
             Log::info('Job detail scraping completed', [
@@ -90,7 +86,6 @@ class SimplyHiredJobDetail extends AbstractScraper
             'original_data_keys' => array_keys($data)
         ]);
 
-        // Parse salary information
         $minSalary = null;
         $maxSalary = null;
         $salaryPeriod = null;
@@ -99,53 +94,49 @@ class SimplyHiredJobDetail extends AbstractScraper
             $this->parseSalaryInfo($data['salary'], $minSalary, $maxSalary, $salaryPeriod);
         }
 
-        // Determine if job is remote
         $isRemote = false;
         $location = $data['location'] ?? '';
         if (stripos($location, 'remote') !== false) {
             $isRemote = true;
         }
 
-        // Parse location
         $city = null;
         $state = null;
-        $country = 'US'; // Default to US for SimplyHired
+        $country = 'US';
 
         if (!empty($location)) {
             $this->parseLocation($location, $city, $state, $country);
         }
 
-        // Default job category ID (you'll need to set up your categories)
-        $jobCategoryId = 1; // Default category, you should determine this based on job title or qualifications
+        $jobCategoryId = 1;
 
-        // Create a standardized format for job details
+
         $result = [
             'employer_name' => $data['company'] ?? '',
             'employer_logo' => $data['company_logo'] ?? null,
-            'employer_website' => null, // SimplyHired doesn't provide this directly
+            'employer_website' => null,
             'publisher' => 'SimplyHired',
             'employment_type' => $data['job_type'] ?? null,
             'job_title' => $data['title'] ?? '',
             'job_category_id' => $jobCategoryId,
-            'category_image' => '/images/categories/default.jpg', // Default image path
+            'category_image' => '/images/categories/default.jpg',
             'apply_link' => $data['source_url'] ?? '',
             'description' => $data['description'] ?? '',
             'is_remote' => $isRemote,
             'city' => $city,
             'state' => $state,
             'country' => $country,
-            'google_link' => null, // SimplyHired doesn't provide this
-            'posted_at' => now()->subDays(rand(1, 14))->toDateTimeString(), // Estimate posting date
-            'expired_at' => now()->addDays(30)->toDateTimeString(), // Default expiration
+            'google_link' => null,
+            'posted_at' => now()->subDays(rand(1, 14))->toDateTimeString(),
+            'expired_at' => now()->addDays(30)->toDateTimeString(),
             'min_salary' => $minSalary,
             'max_salary' => $maxSalary,
             'salary_period' => $salaryPeriod,
             'benefits' => $data['benefits'] ?? [],
             'qualifications' => $data['qualifications'] ?? [],
-            'responsibilities' => [], // SimplyHired doesn't separate responsibilities
+            'responsibilities' => [],
         ];
 
-        // Dispatch job to save the data
         $this->dispatchSaveJob($result);
 
         Log::debug('Transformed job detail', [
@@ -163,10 +154,8 @@ class SimplyHiredJobDetail extends AbstractScraper
     private function parseSalaryInfo(string $salaryText, ?float &$minSalary, ?float &$maxSalary, ?string &$salaryPeriod): void
     {
         try {
-            // Remove any non-essential characters and split by dash
             $salaryText = trim($salaryText);
 
-            // Determine salary period
             if (stripos($salaryText, 'year') !== false) {
                 $salaryPeriod = 'yearly';
             } elseif (stripos($salaryText, 'month') !== false) {
@@ -179,16 +168,14 @@ class SimplyHiredJobDetail extends AbstractScraper
                 $salaryPeriod = 'yearly'; // Default
             }
 
-            // Extract numbers
             preg_match_all('/\$([0-9,.]+)/', $salaryText, $matches);
 
             if (!empty($matches[1])) {
-                // Convert string numbers to float
                 $numbers = array_map(function($num) {
                     return (float) str_replace([',', '$'], '', $num);
                 }, $matches[1]);
 
-                // Sort to ensure min is first, max is second
+
                 sort($numbers);
 
                 if (count($numbers) >= 1) {
@@ -198,7 +185,6 @@ class SimplyHiredJobDetail extends AbstractScraper
                 if (count($numbers) >= 2) {
                     $maxSalary = $numbers[1];
                 } else {
-                    // If only one number is found, use it for both min and max
                     $maxSalary = $minSalary;
                 }
             }
@@ -218,26 +204,23 @@ class SimplyHiredJobDetail extends AbstractScraper
         try {
             $locationText = trim($locationText);
 
-            // Handle "Remote" location
             if (strtolower($locationText) === 'remote') {
                 $city = 'Remote';
                 $state = null;
                 return;
             }
 
-            // Try to parse city and state
             if (strpos($locationText, ',') !== false) {
                 list($cityPart, $statePart) = explode(',', $locationText, 2);
                 $city = trim($cityPart);
                 $state = trim($statePart);
 
-                // If state has more than 2 characters, it might be a country
+
                 if (strlen($state) > 2) {
                     $country = $state;
                     $state = null;
                 }
             } else {
-                // If no comma, assume it's just a city
                 $city = $locationText;
             }
         } catch (\Exception $e) {
@@ -289,10 +272,6 @@ class SimplyHiredJobDetail extends AbstractScraper
         }
     }
 
-    /**
-     * This method is not needed for job detail pages
-     * as they don't have pagination
-     */
     protected function extractNextPageUrl(string $html): ?string
     {
         return null;

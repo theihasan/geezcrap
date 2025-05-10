@@ -11,6 +11,11 @@ class Source extends Model
     protected $table = 'sources';
 
     protected $fillable = [
-        'title', 'url', 'source'
+        'title', 'url', 'source', 'processed_at', 'fail_count'
+    ];
+
+    protected $casts = [
+        'processed_at' => 'datetime',
+        'fail_count' => 'integer'
     ];
 }

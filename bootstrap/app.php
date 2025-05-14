@@ -15,9 +15,21 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {
-        $schedule->job(new ProcessJobScrapingJob('simply-hired', 'https://www.simplyhired.com/search?q=php+developer&l=New+York%2C+NY'))->everyMinute();
+        $searchConfigs = config('job-search.simply-hired.search_urls', []);
+        
+        collect($searchConfigs)->each(function ($config) use ($schedule) {
+            $url = sprintf(
+                'https://www.simplyhired.com/search?q=%s&l=%s',
+                $config['query'],
+                $config['location']
+            );
+            
+            $job = new ProcessJobScrapingJob('simply-hired', $url);
+            
+            $schedule->job($job)->daily();
+        });
         $schedule->command('schedule:scrape-job-details --limit=20')
-            ->hourly()
+            ->everyMinute()
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/scheduler.log'));
     })

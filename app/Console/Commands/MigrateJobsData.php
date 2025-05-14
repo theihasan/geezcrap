@@ -16,15 +16,28 @@ class MigrateJobsData extends Command
         $this->info('Starting jobs data migration...');
 
         try {
-            // Get data from SQLite (current database)
             $jobs = DB::connection('sqlite')
                 ->table('jobs_details')
                 ->get();
 
             $this->info("Found {$jobs->count()} jobs to migrate.");
+            $duplicateCount = 0;
+            $successCount = 0;
 
-            $jobs->each(function ($job) {
+            $jobs->each(function ($job) use (&$duplicateCount, &$successCount) {
                 try {
+                    $exists = DB::connection('old_database')
+                        ->table('job_listings')
+                        ->where('employer_name', $job->employer_name)
+                        ->where('job_title', $job->job_title)
+                        ->exists();
+
+                    if ($exists) {
+                        $this->warn("Skipping duplicate job: {$job->job_title} from {$job->employer_name}");
+                        $duplicateCount++;
+                        return;
+                    }
+
                     $this->info("Processing job ID {$job->id}");
                     DB::connection('old_database')
                         ->table('job_listings')
@@ -47,7 +60,7 @@ class MigrateJobsData extends Command
                             'country' => $job->country,
                             'google_link' => $job->google_link,
                             'posted_at' => $job->posted_at,
-                            'expired_at' => $job->expired_at,  // Changed from expaire_at to expire_at
+                            'expired_at' => $job->expired_at,
                             'min_salary' => $job->min_salary,
                             'max_salary' => $job->max_salary,
                             'salary_currency' => null,
@@ -63,12 +76,17 @@ class MigrateJobsData extends Command
                         ]);
 
                     $this->info("Migrated job: {$job->job_title}");
+                    $successCount++;
                 } catch (\Exception $e) {
                     $this->error("Failed to migrate job ID {$job->id}: " . $e->getMessage());
                 }
             });
 
             $this->info('Jobs data migration completed successfully!');
+            $this->info("Summary:");
+            $this->info("- Total jobs processed: " . $jobs->count());
+            $this->info("- Successfully migrated: " . $successCount);
+            $this->info("- Duplicates skipped: " . $duplicateCount);
         } catch (\Exception $e) {
             $this->error('Migration failed: ' . $e->getMessage());
             return 1;

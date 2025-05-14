@@ -5,17 +5,35 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use PDO;
 
 class MigrateJobsData extends Command
 {
-    protected $signature = 'jobs:migrate-data {--timeout=120}';
+    protected $signature = 'jobs:migrate-data {--timeout=300}';
     protected $description = 'Migrate data from SQLite jobs_details to MySQL job_listings table';
 
     public function handle()
     {
         $this->info('Starting jobs data migration...');
 
+        config([
+            'database.connections.old_database.options' => [
+                PDO::ATTR_TIMEOUT => $this->option('timeout'),
+                PDO::ATTR_PERSISTENT => false,
+            ],
+            'database.connections.old_database.sslmode' => 'require',
+            'database.connections.old_database.ssl' => [
+                'verify_peer' => true,
+                'verify_peer_name' => true,
+            ]
+        ]);
+
+        DB::purge('old_database');
+
         try {
+            DB::connection('old_database')->getPdo();
+            $this->info('Successfully connected to database');
+
             $jobs = DB::connection('sqlite')
                 ->table('jobs_details')
                 ->get();
@@ -89,6 +107,10 @@ class MigrateJobsData extends Command
             $this->info("- Duplicates skipped: " . $duplicateCount);
         } catch (\Exception $e) {
             $this->error('Migration failed: ' . $e->getMessage());
+            $this->info('Connection details:');
+            $this->info('Host: ' . config('database.connections.old_database.host'));
+            $this->info('Port: ' . config('database.connections.old_database.port'));
+            $this->info('Database: ' . config('database.connections.old_database.database'));
             return 1;
         }
     }

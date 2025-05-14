@@ -114,20 +114,25 @@ return [
 
         'old_database' => [
             'driver' => 'mysql',
-            'host' => env('OLD_DB_HOST'),
-            'database' => env('OLD_DB_DATABASE'),
-            'username' => env('OLD_DB_USERNAME'),
+            'host' => env('OLD_DB_HOST', 'geezap-pricelookup.k.aivencloud.com'),
+            'port' => env('OLD_DB_PORT', '20829'),
+            'database' => env('OLD_DB_DATABASE', 'defaultdb'),
+            'username' => env('OLD_DB_USERNAME', 'avnadmin'),
             'password' => env('OLD_DB_PASSWORD'),
-            'unix_socket' => env('DB_SOCKET', ''),
-            'charset' => env('DB_CHARSET', 'utf8mb4'),
-            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
             'prefix' => '',
-            'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+            'options' => [
+                PDO::ATTR_TIMEOUT => 180,
+                PDO::ATTR_PERSISTENT => false,
+            ],
+            'sslmode' => 'require',
+            'ssl' => [
+                'verify_peer' => true,
+                'verify_peer_name' => true,
+            ]
         ],
     ],
 

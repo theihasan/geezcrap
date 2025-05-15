@@ -28,6 +28,19 @@ return Application::configure(basePath: dirname(__DIR__))
             
             $schedule->job($job)->daily();
         });
+
+        $easyJobAIConfigs = config('job-search.easy-job-ai.search_urls', []);
+
+        collect($easyJobAIConfigs)->each(function($config) use ($schedule){
+            $url = sprintf(
+                'https://easyjobai.com/search/%s',
+                $config['query']
+            );
+
+            $job = new ProcessJobScrapingJob('easy-job-ai', $url);
+            $schedule->job($job)->daily();
+        });
+
         $schedule->command('schedule:scrape-job-details --limit=20')
             ->everyMinute()
             ->withoutOverlapping()

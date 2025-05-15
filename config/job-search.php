@@ -225,5 +225,69 @@ return [
             ]
         
         ]
+    ],
+    'easy-job-ai' => [
+        'search_urls' => [
+            [
+                'query' => 'php',
+            ],
+            [
+                'query' => 'javascript',
+            ],
+            [
+                'query' => 'python',
+            ],
+            [
+                'query' => 'java',
+            ],
+            [
+                'query' => 'full+stack',
+            ],
+            [
+                'query' => 'software+engineer',
+            ],
+            [
+                'query' => 'web+developer',
+            ],
+            [
+                'query' => 'backend',
+            ],
+            [
+                'query' => 'frontend',
+            ],
+            [
+                'query' => 'devops',
+            ],
+            [
+                'query' => 'cloud',
+            ],
+            [
+                'query' => 'data+engineer',
+            ],
+            [
+                'query' => 'mobile',
+            ],
+            [
+                'query' => 'react',
+            ],
+            [
+                'query' => 'angular',
+            ],
+            [
+                'query' => 'vue',
+            ],
+            [
+                'query' => 'node',
+            ],
+            [
+                'query' => 'laravel',
+            ],
+            [
+                'query' => 'symfony',
+            ],
+            [
+                'query' => 'wordpress',
+            ]
+        ]
     ]
 ];

@@ -2,13 +2,15 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\ServiceProvider;
+use App\Services\Scraper\Parsers\DOMParser;
+use App\Services\Scraper\EasyJobAIJobDetail;
+use App\Services\Scraper\Strategies\SimplyHired;
 use App\Services\Scraper\Contracts\ParserInterface;
 use App\Services\Scraper\Contracts\ScraperInterface;
-use App\Services\Scraper\Parsers\DOMParser;
-use App\Services\Scraper\Parsers\SimplyHiredJobDetailParser;
-use App\Services\Scraper\Strategies\SimplyHired;
 use App\Services\Scraper\Strategies\SimplyHiredJobDetail;
-use Illuminate\Support\ServiceProvider;
+use App\Services\Scraper\Parsers\EasyJobAIJobDetailParser;
+use App\Services\Scraper\Parsers\SimplyHiredJobDetailParser;
 
 class ScraperServiceProvider extends ServiceProvider
 {
@@ -23,6 +25,14 @@ class ScraperServiceProvider extends ServiceProvider
 
         $this->app->bind('scraper.parser.simplyhired.detail', function ($app) {
             return new SimplyHiredJobDetailParser();
+        });
+
+        $this->app->bind('scraper.parser.easy-job-ai.detail', function ($app) {
+            return new EasyJobAIJobDetailParser();
+        });
+
+        $this->app->bind('scraper.easy-job-ai.detail', function ($app) {
+            return new EasyJobAIJobDetail($app->make('scraper.parser.easy-job-ai.detail'));
         });
 
         $this->app->bind('scraper.simplyhired', function ($app) {

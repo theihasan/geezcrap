@@ -12,6 +12,8 @@ return new class extends Migration {
             $table->string('title', 500);
             $table->string('url', 255);
             $table->string('source', 50);
+            $table->timestamp('processed_at')->nullable()->after('source');
+            $table->unsignedInteger('fail_count')->default(0)->after('processed_at');
             $table->timestamps();
             $table->softDeletes();
         });

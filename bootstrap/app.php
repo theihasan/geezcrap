@@ -16,33 +16,33 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {
         $searchConfigs = config('job-search.simply-hired.search_urls', []);
-        
+
         collect($searchConfigs)->each(function ($config) use ($schedule) {
             $url = sprintf(
                 'https://www.simplyhired.com/search?q=%s&l=%s',
                 $config['query'],
                 $config['location']
             );
-            
+
             $job = new ProcessJobScrapingJob('simply-hired', $url);
-            
+
             $schedule->job($job)->daily();
         });
 
-        $easyJobAIConfigs = config('job-search.easy-job-ai.search_urls', []);
+        //$easyJobAIConfigs = config('job-search.easy-job-ai.search_urls', []);
+        //
+        //collect($easyJobAIConfigs)->each(function($config) use ($schedule){
+        //    $url = sprintf(
+        //        'https://easyjobai.com/search/%s',
+        //        $config['query']
+        //    );
+        //
+        //    $job = new ProcessJobScrapingJob('easy-job-ai', $url);
+        //    $schedule->job($job)->daily();
+        //});
 
-        collect($easyJobAIConfigs)->each(function($config) use ($schedule){
-            $url = sprintf(
-                'https://easyjobai.com/search/%s',
-                $config['query']
-            );
-
-            $job = new ProcessJobScrapingJob('easy-job-ai', $url);
-            $schedule->job($job)->daily();
-        });
-
-        $schedule->command('schedule:scrape-job-details --limit=20')
-            ->everyMinute()
+        $schedule->command('schedule:scrape-job-details --limit=10')
+            ->everyFiveMinutes()
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/scheduler.log'));
     })
